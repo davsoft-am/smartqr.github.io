@@ -1,28 +1,715 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <title>SmartQR.AM</title>
-        <style>
-            * { margin: 0; padding: 0; }
-            html, body {
-                width: 100%;
-                height: 100%;
-                background-color: #333;
-                color: #add8e6;
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartQR - Advanced QR Code Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-modal.active {
+            display: flex;
+        }
+        .auth-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex flex-col">
+<!-- Header -->
+<header class="bg-white shadow-sm">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <div class="flex items-center">
+            <i class="fas fa-qrcode text-3xl text-blue-600 mr-3"></i>
+            <h1 class="text-2xl font-bold text-gray-800">SmartQR</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="signin-btn" class="text-gray-600 hover:text-blue-600 font-medium">Sign In</button>
+            <button id="signup-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">Sign Up</button>
+        </div>
+    </div>
+</header>
+
+<!-- Main Content -->
+<main class="container mx-auto px-4 py-8 flex-grow">
+    <div class="max-w-4xl mx-auto">
+        <div class="text-center mb-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2">Generate QR Codes Instantly</h2>
+            <p class="text-gray-600">Create customized QR codes for various purposes with our easy-to-use generator</p>
+        </div>
+
+        <!-- QR Generator Panel -->
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+            <!-- Tabs -->
+            <div class="flex overflow-x-auto border-b">
+                <button class="tab-btn flex-shrink-0 py-3 px-6 font-medium border-b-2 border-blue-500 text-blue-600" data-tab="text-tab">
+                    <i class="fas fa-font mr-2"></i> Text
+                </button>
+                <button class="tab-btn flex-shrink-0 py-3 px-6 font-medium text-gray-500 hover:text-blue-600" data-tab="url-tab">
+                    <i class="fas fa-link mr-2"></i> URL
+                </button>
+                <button class="tab-btn flex-shrink-0 py-3 px-6 font-medium text-gray-500 hover:text-blue-600" data-tab="wifi-tab">
+                    <i class="fas fa-wifi mr-2"></i> WiFi
+                </button>
+                <button class="tab-btn flex-shrink-0 py-3 px-6 font-medium text-gray-500 hover:text-blue-600" data-tab="vcard-tab">
+                    <i class="fas fa-address-card mr-2"></i> vCard
+                </button>
+                <button class="tab-btn flex-shrink-0 py-3 px-6 font-medium text-gray-500 hover:text-blue-600" data-tab="event-tab">
+                    <i class="fas fa-calendar-alt mr-2"></i> Event
+                </button>
+            </div>
+
+            <!-- Text Tab -->
+            <div id="text-tab" class="tab-content active p-6">
+                <form id="text-form" class="space-y-4">
+                    <div>
+                        <label for="text-input" class="block text-sm font-medium text-gray-700 mb-1">Text Content</label>
+                        <textarea id="text-input" rows="4" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Enter any text you want to encode"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- URL Tab -->
+            <div id="url-tab" class="tab-content p-6">
+                <form id="url-form" class="space-y-4">
+                    <div>
+                        <label for="url-input" class="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                        <input type="url" id="url-input" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- WiFi Tab -->
+            <div id="wifi-tab" class="tab-content p-6">
+                <form id="wifi-form" class="space-y-4">
+                    <div>
+                        <label for="wifi-ssid" class="block text-sm font-medium text-gray-700 mb-1">Network Name (SSID)</label>
+                        <input type="text" id="wifi-ssid" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="MyWiFiNetwork">
+                    </div>
+                    <div>
+                        <label for="wifi-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                        <input type="text" id="wifi-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="wifipassword123">
+                    </div>
+                    <div>
+                        <label for="wifi-type" class="block text-sm font-medium text-gray-700 mb-1">Encryption Type</label>
+                        <select id="wifi-type" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="WPA">WPA/WPA2</option>
+                            <option value="WEP">WEP</option>
+                            <option value="">None (Open Network)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- vCard Tab -->
+            <div id="vcard-tab" class="tab-content p-6">
+                <form id="vcard-form" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="vcard-firstname" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                            <input type="text" id="vcard-firstname" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="John">
+                        </div>
+                        <div>
+                            <label for="vcard-lastname" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                            <input type="text" id="vcard-lastname" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Doe">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="vcard-phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                        <input type="tel" id="vcard-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="+1 (123) 456-7890">
+                    </div>
+                    <div>
+                        <label for="vcard-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" id="vcard-email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="john@example.com">
+                    </div>
+                    <div>
+                        <label for="vcard-company" class="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                        <input type="text" id="vcard-company" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="ACME Inc.">
+                    </div>
+                    <div>
+                        <label for="vcard-address" class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <textarea id="vcard-address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="123 Main St, City, Country"></textarea>
+                    </div>
+                    <div>
+                        <label for="vcard-website" class="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                        <input type="url" id="vcard-website" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="https://example.com">
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- Event Tab -->
+            <div id="event-tab" class="tab-content p-6">
+                <form id="event-form" class="space-y-4">
+                    <div>
+                        <label for="event-title" class="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
+                        <input type="text" id="event-title" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Team Meeting">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="event-start" class="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
+                            <input type="datetime-local" id="event-start" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label for="event-end" class="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
+                            <input type="datetime-local" id="event-end" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="event-location" class="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                        <input type="text" id="event-location" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Conference Room A">
+                    </div>
+                    <div>
+                        <label for="event-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                        <textarea id="event-description" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Event details..."></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white py-2 px-4 rounded-md font-medium transition-all duration-200">
+                        <i class="fas fa-qrcode mr-2"></i> Generate QR Code
+                    </button>
+                </form>
+            </div>
+
+            <!-- QR Code Display -->
+            <div id="qr-result" class="p-6 border-t hidden">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div id="qr-code" class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm"></div>
+                    <div class="space-y-3 w-full md:w-auto">
+                        <button id="download-png" class="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-md font-medium border border-gray-300 flex items-center justify-center transition-all duration-200">
+                            <i class="fas fa-download mr-2 text-blue-500"></i> Download PNG
+                        </button>
+                        <button id="download-svg" class="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-md font-medium border border-gray-300 flex items-center justify-center transition-all duration-200">
+                            <i class="fas fa-download mr-2 text-green-500"></i> Download SVG
+                        </button>
+                        <button id="copy-link" class="w-full md:w-auto bg-white hover:bg-gray-50 text-gray-700 py-2 px-4 rounded-md font-medium border border-gray-300 flex items-center justify-center transition-all duration-200">
+                            <i class="fas fa-copy mr-2 text-purple-500"></i> Copy Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white py-8">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-qrcode text-2xl text-blue-400 mr-2"></i>
+                    <h3 class="text-xl font-bold">SmartQR</h3>
+                </div>
+                <p class="text-gray-400">The most advanced QR code generator with multiple formats and customization options.</p>
+                <div class="flex space-x-4 mt-4">
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Quick Links</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Home</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Features</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Pricing</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">About Us</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Support</h4>
+                <ul class="space-y-2">
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Help Center</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">FAQs</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Privacy Policy</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Terms of Service</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white transition-colors duration-200">Cookie Policy</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-lg font-semibold mb-4">Contact Us</h4>
+                <ul class="space-y-2">
+                    <li class="flex items-start">
+                        <i class="fas fa-map-marker-alt text-blue-400 mt-1 mr-2"></i>
+                        <span class="text-gray-400">123 QR Street, Digital City, 10001</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-phone-alt text-blue-400 mr-2"></i>
+                        <span class="text-gray-400">+1 (555) 123-4567</span>
+                    </li>
+                    <li class="flex items-center">
+                        <i class="fas fa-envelope text-blue-400 mr-2"></i>
+                        <span class="text-gray-400">support@smartqr.com</span>
+                    </li>
+                </ul>
+                <div class="mt-4">
+                    <h5 class="font-medium mb-2">Subscribe to our newsletter</h5>
+                    <div class="flex">
+                        <input type="email" placeholder="Your email" class="px-3 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-1 focus:ring-blue-500 w-full">
+                        <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-r-md">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
+            <p>&copy; 2023 SmartQR. All rights reserved.</p>
+        </div>
+    </div>
+</footer>
+
+<!-- Authentication Modals -->
+<!-- Sign In Modal -->
+<div id="signin-modal" class="auth-modal">
+    <div class="auth-content">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Sign In</h3>
+            <button id="close-signin" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="signin-form" class="space-y-4">
+            <div>
+                <label for="signin-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="signin-email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="your@email.com" required>
+            </div>
+            <div>
+                <label for="signin-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="signin-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••" required>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <input id="remember-me" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="remember-me" class="ml-2 block text-sm text-gray-700">Remember me</label>
+                </div>
+                <a href="#" class="text-sm text-blue-600 hover:text-blue-500">Forgot password?</a>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium">
+                Sign In
+            </button>
+        </form>
+        <div class="mt-4 text-center text-sm text-gray-600">
+            Don't have an account? <button id="switch-to-signup" class="text-blue-600 hover:text-blue-500 font-medium">Sign up</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sign Up Modal -->
+<div id="signup-modal" class="auth-modal">
+    <div class="auth-content">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Create Account</h3>
+            <button id="close-signup" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form id="signup-form" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="signup-firstname" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                    <input type="text" id="signup-firstname" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="John" required>
+                </div>
+                <div>
+                    <label for="signup-lastname" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                    <input type="text" id="signup-lastname" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="Doe" required>
+                </div>
+            </div>
+            <div>
+                <label for="signup-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="signup-email" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="your@email.com" required>
+            </div>
+            <div>
+                <label for="signup-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <input type="password" id="signup-password" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••" required>
+            </div>
+            <div>
+                <label for="signup-confirm" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" id="signup-confirm" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" placeholder="••••••••" required>
+            </div>
+            <div class="flex items-center">
+                <input id="terms" type="checkbox" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" required>
+                <label for="terms" class="ml-2 block text-sm text-gray-700">
+                    I agree to the <a href="#" class="text-blue-600 hover:text-blue-500">Terms</a> and <a href="#" class="text-blue-600 hover:text-blue-500">Privacy Policy</a>
+                </label>
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md font-medium">
+                Create Account
+            </button>
+        </form>
+        <div class="mt-4 text-center text-sm text-gray-600">
+            Already have an account? <button id="switch-to-signin" class="text-blue-600 hover:text-blue-500 font-medium">Sign in</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab-btn').forEach(t => {
+                t.classList.remove('border-blue-500', 'text-blue-600');
+                t.classList.add('text-gray-500');
+            });
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.remove('active');
+            });
+
+            // Add active class to clicked tab and corresponding content
+            btn.classList.remove('text-gray-500');
+            btn.classList.add('border-blue-500', 'text-blue-600');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
+
+    // QR Code Generation
+    function generateQRCode(type, data) {
+        const qrDiv = document.getElementById('qr-code');
+        qrDiv.innerHTML = ''; // Clear previous QR code
+
+        let qrData;
+
+        switch(type) {
+            case 'text':
+                qrData = data.text;
+                break;
+            case 'url':
+                qrData = data.url;
+                break;
+            case 'wifi':
+                qrData = `WIFI:T:${data.encryption};S:${data.ssid};P:${data.password};;`;
+                break;
+            case 'vcard':
+                qrData = `BEGIN:VCARD\nVERSION:3.0\nN:${data.lastname};${data.firstname}\nFN:${data.firstname} ${data.lastname}\nTEL:${data.phone}\nEMAIL:${data.email}\nORG:${data.company}\nADR:${data.address}\nURL:${data.website}\nEND:VCARD`;
+                break;
+            case 'event':
+                const startDate = new Date(data.start);
+                const endDate = new Date(data.end);
+                const formatDate = (date) => date.toISOString().replace(/-|:|\.\d\d\d/g, '');
+                qrData = `BEGIN:VEVENT\nSUMMARY:${data.title}\nDTSTART:${formatDate(startDate)}\nDTEND:${formatDate(endDate)}\nLOCATION:${data.location}\nDESCRIPTION:${data.description}\nEND:VEVENT`;
+                break;
+        }
+
+        const qr = qrcode(0, 'L');
+        qr.addData(qrData);
+        qr.make();
+
+        qrDiv.innerHTML = qr.createImgTag(4);
+
+        // Set the QR code image source for download
+        const qrImg = qrDiv.querySelector('img');
+        qrImg.id = 'qr-image';
+        qrImg.alt = 'Generated QR Code';
+        qrImg.classList.add('mx-auto');
+
+        // Show the result section
+        document.getElementById('qr-result').classList.remove('hidden');
+
+        // Store the current QR data for downloads
+        currentQR = {
+            type: type,
+            data: qrData,
+            imgSrc: qrImg.src
+        };
+    }
+
+    // Form submissions
+    document.getElementById('text-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const text = document.getElementById('text-input').value;
+        if (!text.trim()) {
+            alert('Please enter some text');
+            return;
+        }
+        generateQRCode('text', { text });
+    });
+
+    document.getElementById('url-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const url = document.getElementById('url-input').value;
+        if (!url.trim()) {
+            alert('Please enter a URL');
+            return;
+        }
+        generateQRCode('url', { url });
+    });
+
+    document.getElementById('wifi-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const wifiData = {
+            ssid: document.getElementById('wifi-ssid').value,
+            password: document.getElementById('wifi-password').value,
+            encryption: document.getElementById('wifi-type').value
+        };
+        if (!wifiData.ssid.trim()) {
+            alert('Please enter a network name');
+            return;
+        }
+        generateQRCode('wifi', wifiData);
+    });
+
+    document.getElementById('vcard-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const vcardData = {
+            firstname: document.getElementById('vcard-firstname').value,
+            lastname: document.getElementById('vcard-lastname').value,
+            phone: document.getElementById('vcard-phone').value,
+            email: document.getElementById('vcard-email').value,
+            company: document.getElementById('vcard-company').value,
+            address: document.getElementById('vcard-address').value,
+            website: document.getElementById('vcard-website').value
+        };
+        if (!vcardData.firstname.trim() || !vcardData.lastname.trim()) {
+            alert('Please enter at least first and last name');
+            return;
+        }
+        generateQRCode('vcard', vcardData);
+    });
+
+    document.getElementById('event-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const eventData = {
+            title: document.getElementById('event-title').value,
+            start: document.getElementById('event-start').value,
+            end: document.getElementById('event-end').value,
+            location: document.getElementById('event-location').value,
+            description: document.getElementById('event-description').value
+        };
+        if (!eventData.title.trim()) {
+            alert('Please enter an event title');
+            return;
+        }
+        if (!eventData.start || !eventData.end) {
+            alert('Please select start and end dates');
+            return;
+        }
+        generateQRCode('event', eventData);
+    });
+
+    // Download and copy functionality
+    let currentQR = null;
+
+    document.getElementById('download-png').addEventListener('click', function() {
+        if (!currentQR) return;
+
+        const link = document.createElement('a');
+        link.href = currentQR.imgSrc;
+        link.download = `smartqr-${currentQR.type}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    document.getElementById('download-svg').addEventListener('click', function() {
+        if (!currentQR) return;
+
+        const qr = qrcode(0, 'L');
+        qr.addData(currentQR.data);
+        qr.make();
+
+        const svgString = qr.createSvgTag(4);
+        const blob = new Blob([svgString], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `smartqr-${currentQR.type}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('copy-link').addEventListener('click', function() {
+        if (!currentQR) return;
+
+        navigator.clipboard.writeText(currentQR.data)
+            .then(() => {
+                // Show a nice toast notification
+                const toast = document.createElement('div');
+                toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg';
+                toast.textContent = 'Copied to clipboard!';
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => toast.remove(), 300);
+                }, 2000);
+            })
+            .catch(err => console.error('Failed to copy: ', err));
+    });
+
+    // Authentication functionality
+    // Modal toggles
+    document.getElementById('signin-btn').addEventListener('click', () => {
+        document.getElementById('signin-modal').classList.add('active');
+    });
+
+    document.getElementById('signup-btn').addEventListener('click', () => {
+        document.getElementById('signup-modal').classList.add('active');
+    });
+
+    document.getElementById('close-signin').addEventListener('click', () => {
+        document.getElementById('signin-modal').classList.remove('active');
+    });
+
+    document.getElementById('close-signup').addEventListener('click', () => {
+        document.getElementById('signup-modal').classList.remove('active');
+    });
+
+    document.getElementById('switch-to-signup').addEventListener('click', () => {
+        document.getElementById('signin-modal').classList.remove('active');
+        document.getElementById('signup-modal').classList.add('active');
+    });
+
+    document.getElementById('switch-to-signin').addEventListener('click', () => {
+        document.getElementById('signup-modal').classList.remove('active');
+        document.getElementById('signin-modal').classList.add('active');
+    });
+
+    // Close modals when clicking outside
+    document.querySelectorAll('.auth-modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.remove('active');
             }
-            #wrapper {
-                text-align: center;
-                width: 400px;
-                height: 200px;
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                margin-top: -100px;
-                margin-left: -200px;
-            }
-        </style>
-    </head>
-    <body>
-        <div id="wrapper"> <h2>Under construction...</h2> </div>
-    </body>
+        });
+    });
+
+    // Form submissions (simulated)
+    document.getElementById('signin-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('signin-email').value;
+        const password = document.getElementById('signin-password').value;
+
+        // Simulate authentication
+        setTimeout(() => {
+            document.getElementById('signin-modal').classList.remove('active');
+            // Update UI to show logged in state
+            document.querySelector('header .flex.items-center.space-x-4').innerHTML = `
+                    <span class="text-gray-700">Welcome, ${email.split('@')[0]}</span>
+                    <button id="signout-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium">
+                        Sign Out
+                    </button>
+                `;
+
+            // Add sign out functionality
+            document.getElementById('signout-btn').addEventListener('click', () => {
+                document.querySelector('header .flex.items-center.space-x-4').innerHTML = `
+                        <button id="signin-btn" class="text-gray-600 hover:text-blue-600 font-medium">Sign In</button>
+                        <button id="signup-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium">Sign Up</button>
+                    `;
+
+                // Reattach event listeners
+                document.getElementById('signin-btn').addEventListener('click', () => {
+                    document.getElementById('signin-modal').classList.add('active');
+                });
+                document.getElementById('signup-btn').addEventListener('click', () => {
+                    document.getElementById('signup-modal').classList.add('active');
+                });
+            });
+        }, 1000);
+    });
+
+    document.getElementById('signup-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const email = document.getElementById('signup-email').value;
+        const password = document.getElementById('signup-password').value;
+        const confirm = document.getElementById('signup-confirm').value;
+
+        if (password !== confirm) {
+            alert('Passwords do not match');
+            return;
+        }
+
+        // Simulate registration
+        setTimeout(() => {
+            document.getElementById('signup-modal').classList.remove('active');
+            // Show success message
+            const success = document.createElement('div');
+            success.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg';
+            success.textContent = 'Account created successfully! Please sign in.';
+            document.body.appendChild(success);
+
+            setTimeout(() => {
+                success.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => success.remove(), 300);
+            }, 3000);
+
+            // Open sign in modal
+            document.getElementById('signin-modal').classList.add('active');
+        }, 1000);
+    });
+
+    // Set default datetime for event form
+    const now = new Date();
+    const future = new Date();
+    future.setHours(now.getHours() + 1);
+
+    const formatDateTimeLocal = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
+    document.getElementById('event-start').value = formatDateTimeLocal(now);
+    document.getElementById('event-end').value = formatDateTimeLocal(future);
+</script>
+</body>
 </html>
